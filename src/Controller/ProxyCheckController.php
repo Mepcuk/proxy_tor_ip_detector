@@ -75,6 +75,13 @@ class ProxyCheckController extends AbstractController
         }
 
         /**
+         * Proxy Checker
+         */
+        if ( key_exists('REMOTE_ADDR', $dataIp) && key_exists('REMOTE_PORT', $dataIp)  ) {
+            $proxyExist = $this->checkProxyAlive($dataIp['REMOTE_ADDR'], $dataIp['REMOTE_PORT']);
+        }
+
+        /**
          * Tor check
          */
         if ( key_exists('REMOTE_ADDR', $dataIp) ) {
@@ -84,9 +91,9 @@ class ProxyCheckController extends AbstractController
         return $this->render('proxy.html.twig', [
             'data'          => $server,
             'ip'            => $dataIp,
+            'proxy'         => $proxyExist,
             'torNetwork'    => $torNetwork,
         ]);
-        return $this->json($data);
     }
 
 
@@ -100,7 +107,8 @@ class ProxyCheckController extends AbstractController
 
     public function toriplist(Request $request): Response
     {
-        $response = $this->httpClient->request(
+        $ipList     = '';
+        $response   = $this->httpClient->request(
             'GET',
             'https://openinternet.io/tor/tor-exit-list.txt'
         );
@@ -114,7 +122,7 @@ class ProxyCheckController extends AbstractController
         }
 
 
-        return $this->json($content);
+        return $this->json(json_encode($content));
     }
 
     public function saveTorList(array $ipList):bool
@@ -176,8 +184,10 @@ class ProxyCheckController extends AbstractController
      * @return bool
      */
 
-    private function checkProxyAlive(string $ip, string $port, int $errorCode, string $errorDescription): boolean
+    private function checkProxyAlive(string $ip, string $port): bool
     {
+        $errorCode          = '';
+        $errorDescription   = '';
         try {
             $socketConnection = fsockopen($ip, $port, $errorCode, $errorDescription, 10);
             fclose($socketConnection);
@@ -220,6 +230,7 @@ class ProxyCheckController extends AbstractController
 
         return $ipRecords;
     }
+
 
     /**
      * Check in Database if IP exist in active Tor Network list
