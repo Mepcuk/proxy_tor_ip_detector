@@ -62,6 +62,9 @@
     "symfony/deprecation-contracts": {
         "version": "v2.4.0"
     },
+    "symfony/dom-crawler": {
+        "version": "v5.3.7"
+    },
     "symfony/dotenv": {
         "version": "v5.3.8"
     },
@@ -110,6 +113,9 @@
             "src/Kernel.php",
             "src/Controller/.gitignore"
         ]
+    },
+    "symfony/http-client": {
+        "version": "v5.3.8"
     },
     "symfony/http-client-contracts": {
         "version": "v2.4.0"

@@ -3,12 +3,25 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ProxyCheckController extends AbstractController
 {
+
+    /**
+     * @var HttpClientInterface
+     */
+    private $httpClient;
+
+    public function __construct(HttpClientInterface $httpClient)
+    {
+        $this->httpClient = $httpClient;
+    }
+
     /**
      * @Route("/ipcheck", name="proxy_check")
      */
@@ -68,12 +81,45 @@ class ProxyCheckController extends AbstractController
      */
     public function toriplist(Request $request): Response
     {
+        $response = $this->httpClient->request(
+            'GET',
+            'https://openinternet.io/tor/tor-exit-list.txt'
+        );
+
+        $statusCode = $response->getStatusCode();
+
+        if ( 200 == $statusCode ) {
+            $content = $response->getContent();
+        }
 
 
-        return $this->json($data);
+        return $this->json($content);
     }
 
+    /**
+     * Explore text by new line and Validate Ip by ipv4 or ipv6
+     *
+     * @param string $incomingText
+     * @return array
+     */
 
+
+    public function validateIp(string $incomingText):array
+    {
+        $rowRecords = explode(PHP_EOL, $incomingText);
+        $ipRecords  = [];
+
+        foreach ( $rowRecords as $rowRecord ) {
+            if ( filter_var($rowRecord, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 )) {
+                $ipRecords[] = $rowRecord;
+            }
+            if ( filter_var($rowRecord, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 )) {
+                $ipRecords[] = $rowRecord;
+            }
+        }
+
+        return $ipRecords;
+    }
 
     private function checkProxyAlive(string $ip, string $port, int $errorCode, string $errorDescription): boolean
     {
