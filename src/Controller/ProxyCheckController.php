@@ -15,8 +15,15 @@ class ProxyCheckController extends AbstractController
     public function index(Request $request): Response
     {
 
-        $data[]     = '----------------------- Header Data -----------------------';
-        $headers    = $request->headers->all();
+        $twigParameters = [
+            'HTTP_ACCEPT_LANGUAGE', 'HTTP_USER_AGENT'
+        ];
+        $ipParameters = [
+            'REMOTE_ADDR', 'REMOTE_PORT'
+        ];
+
+        $headerData[]   = '----------------------- Header Data -----------------------';
+        $headers        = $request->headers->all();
 
         foreach ( $headers as $key => $headersArray ) {
 
@@ -26,23 +33,60 @@ class ProxyCheckController extends AbstractController
                     $value .= ' ' . $headersData;
                 }
             }
-            $data[] = $key . ' - ' . $value;
+            $headerData[] = $key . ' - ' . $value;
         }
 
-        natsort($data);
-        $data[] = '';
-        $data[] = '----------------------- $_SERVER -----------------------';
 
-        $server = [];
+        $dataBrowser    = [];
+        $dataIp         = [];
+        $server         = [];
         foreach ( $_SERVER as $key => $value ) {
-            $server[] = $key . ' - ' . $value;
+            $server[$key] = $value;
         }
-        asort($server);
-        $data[] = $server;
 
-        $a = 10;
+        foreach ( $twigParameters as $twigParameter ) {
+            if ( array_key_exists($twigParameter, $server)) {
+                $dataBrowser[$twigParameter] = $server[$twigParameter];
+            }
+        }
+
+        foreach ( $ipParameters as $ipParameter ) {
+            if ( array_key_exists($ipParameter, $server)) {
+                $dataIp[$ipParameter] = $server[$ipParameter];
+            }
+        }
+
+        return $this->render('proxy.html.twig', [
+            'data'  => $server,
+            'ip'    => $dataIp,
+        ]);
+        return $this->json($data);
+    }
+
+    /**
+     * @Route("/toriplist", name="tor_ip_list")
+     */
+    public function toriplist(Request $request): Response
+    {
 
 
         return $this->json($data);
     }
+
+
+
+    private function checkProxyAlive(string $ip, string $port, int $errorCode, string $errorDescription): boolean
+    {
+        try {
+            $socketConnection = fsockopen($ip, $port, $errorCode, $errorDescription, 10);
+            fclose($socketConnection);
+            return true;
+        } catch ( \Throwable $th) {
+            return false;
+        }
+    }
+
+    /**
+     * https://openinternet.io/tor/tor-exit-list.txt
+     */
 }
