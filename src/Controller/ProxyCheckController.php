@@ -37,7 +37,7 @@ class ProxyCheckController extends AbstractController
             'HTTP_ACCEPT_LANGUAGE', 'HTTP_USER_AGENT'
         ];
         $ipParameters   = [
-            'REMOTE_ADDR', 'REMOTE_PORT'
+            'REMOTE_ADDR', 'REMOTE_PORT', 'HTTP_X_FORWARDED_FOR'
         ];
 
         $headerData[] = '----------------------- Header Data -----------------------';
@@ -77,8 +77,18 @@ class ProxyCheckController extends AbstractController
         /**
          * Proxy Checker
          */
-        if ( key_exists('REMOTE_ADDR', $dataIp) && key_exists('REMOTE_PORT', $dataIp)  ) {
-            $proxyExist = $this->checkProxyAlive($dataIp['REMOTE_ADDR'], $dataIp['REMOTE_PORT']);
+        if ( key_exists('HTTP_X_FORWARDED_FOR', $dataIp) ) {
+            $proxyIp    = $dataIp['REMOTE_ADDR'] . ' - ' . $dataIp['HTTP_VIA'];
+            if ( key_exists('HTTP_VIA', $dataIp) ) {
+                $proxyIp    .=  ' - ' . $dataIp['HTTP_VIA'];
+            }
+            $clientIp   = $dataIp['HTTP_X_FORWARDED_FOR'];
+            $proxyExist = true;
+//            $proxyExist = $this->checkProxyAlive($dataIp['REMOTE_ADDR'], $dataIp['REMOTE_PORT']);
+        } else {
+            $clientIp   = $dataIp['REMOTE_ADDR'] . ' - ' . $dataIp['REMOTE_PORT'];
+            $proxyExist = false;
+            $proxyIp    = null;
         }
 
         /**
@@ -90,8 +100,8 @@ class ProxyCheckController extends AbstractController
 
         return $this->render('proxy.html.twig', [
             'data'          => $server,
-            'ip'            => $dataIp,
-            'proxy'         => $proxyExist,
+            'clientIp'      => $clientIp,
+            'proxyIp'       => $proxyIp,
             'torNetwork'    => $torNetwork,
         ]);
     }
