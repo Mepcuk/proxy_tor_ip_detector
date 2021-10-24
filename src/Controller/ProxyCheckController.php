@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\TorNetworkIpList;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,13 +29,14 @@ class ProxyCheckController extends AbstractController
      *
      * @Route("/ipcheck", name="proxy_check")
      */
+
     public function index(Request $request): Response
     {
-
+        $torNetwork     = false;
         $twigParameters = [
             'HTTP_ACCEPT_LANGUAGE', 'HTTP_USER_AGENT'
         ];
-        $ipParameters = [
+        $ipParameters   = [
             'REMOTE_ADDR', 'REMOTE_PORT'
         ];
 
@@ -72,9 +74,17 @@ class ProxyCheckController extends AbstractController
             }
         }
 
+        /**
+         * Tor check
+         */
+        if ( key_exists('REMOTE_ADDR', $dataIp) ) {
+            $torNetwork = $this->checkIpTorNetwork($dataIp['REMOTE_ADDR']);
+        }
+
         return $this->render('proxy.html.twig', [
-            'data' => $server,
-            'ip' => $dataIp,
+            'data'          => $server,
+            'ip'            => $dataIp,
+            'torNetwork'    => $torNetwork,
         ]);
         return $this->json($data);
     }
@@ -82,9 +92,12 @@ class ProxyCheckController extends AbstractController
 
     /**
      * Get Tor active IP list and save to DB
+     * please do not often request crontab -> /10 * * *
+     * Tor List updated once in 10 min
      *
      * @Route("/toriplist", name="tor_ip_list")
      */
+
     public function toriplist(Request $request): Response
     {
         $response = $this->httpClient->request(
@@ -95,12 +108,83 @@ class ProxyCheckController extends AbstractController
         $statusCode = $response->getStatusCode();
 
         if (200 == $statusCode) {
-            $content = $response->getContent();
-            $ipList = $this->validateIp($content);
+            $content    = $response->getContent();
+            $ipList     = $this->validateIp($content);
+            $this->saveTorList($ipList);
         }
 
 
         return $this->json($content);
+    }
+
+    public function saveTorList(array $ipList):bool
+    {
+        if ( !empty($ipList) ) {
+
+            $entityManager = $this->getDoctrine()->getManager();
+
+            foreach ( $ipList as $ip ) {
+
+                $ipRecord = $entityManager->getRepository(TorNetworkIpList::class)->findOneBy([
+                    'ip' => $ip,
+                ]);
+
+                if ( !$ipRecord ) {
+                    $ipRecord = new TorNetworkIpList();
+                    $ipRecord->setIp($ip);
+                    $ipRecord->setCreatedAt(new \DateTimeImmutable());
+                    $ipRecord->setActive(true);
+                }
+                $ipRecord->setActive(true);
+
+                $entityManager->persist($ipRecord);
+                $entityManager->flush();
+            }
+
+            /**
+             * Deactivate Tor IP - not active anymore
+             */
+
+            $ipRecords = $entityManager->getRepository(TorNetworkIpList::class)->findAll();
+
+            /** @var TorNetworkIpList $ipRecord */
+            foreach ( $ipRecords as $ipRecord ) {
+
+                if ( !in_array($ipRecord->getIp(), $ipList) && $ipRecord->getActive() ) {
+                    $ipRecord->setActive(false);
+                    $ipRecord->setEndedAt(new \DateTimeImmutable());
+
+                    $entityManager->persist($ipRecord);
+                    $entityManager->flush();
+                }
+            }
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
+     * Check if proxy is alive just opening connection to Ip:port (Before use)
+     *
+     * @param string $ip
+     * @param string $port
+     * @param int $errorCode
+     * @param string $errorDescription
+     * @return bool
+     */
+
+    private function checkProxyAlive(string $ip, string $port, int $errorCode, string $errorDescription): boolean
+    {
+        try {
+            $socketConnection = fsockopen($ip, $port, $errorCode, $errorDescription, 10);
+            fclose($socketConnection);
+            return true;
+        } catch (\Throwable $th) {
+            return false;
+        }
     }
 
 
@@ -137,26 +221,21 @@ class ProxyCheckController extends AbstractController
         return $ipRecords;
     }
 
-
     /**
-     * Check if proxy is alive just opening connection to Ip:port (Before use)
+     * Check in Database if IP exist in active Tor Network list
      *
-     * @param string $ip
-     * @param string $port
-     * @param int $errorCode
-     * @param string $errorDescription
+     * @param string $REMOTE_ADDR
      * @return bool
      */
 
-    private function checkProxyAlive(string $ip, string $port, int $errorCode, string $errorDescription): boolean
+    private function checkIpTorNetwork(string $REMOTE_ADDR):bool
     {
-        try {
-            $socketConnection = fsockopen($ip, $port, $errorCode, $errorDescription, 10);
-            fclose($socketConnection);
-            return true;
-        } catch (\Throwable $th) {
-            return false;
-        }
+        $entityManager  = $this->getDoctrine()->getManager();
+        $ipRecord       = $entityManager->getRepository(TorNetworkIpList::class)->findOneBy([
+            'ip' => $REMOTE_ADDR,
+        ]);
+
+        return (bool)$ipRecord;
     }
 }
 
