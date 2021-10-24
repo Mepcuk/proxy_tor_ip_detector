@@ -118,6 +118,15 @@ class ProxyCheckController extends AbstractController
             }
         }
 
+        /**
+         * Validate an IP address is not in a private range
+         */
+//        filter_var('127.0.0.1', FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE);
+        /**
+         * Validate an IP address is not in a reserved range
+         */
+//        filter_var('127.0.0.1', FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE)
+
         return $ipRecords;
     }
 
