@@ -37,7 +37,7 @@ class ProxyCheckController extends AbstractController
             'HTTP_ACCEPT_LANGUAGE', 'HTTP_USER_AGENT'
         ];
         $ipParameters   = [
-            'REMOTE_ADDR', 'REMOTE_PORT', 'HTTP_X_FORWARDED_FOR'
+            'REMOTE_ADDR', 'REMOTE_PORT', 'HTTP_X_FORWARDED_FOR', 'HTTP_VIA'
         ];
 
         $headerData[] = '----------------------- Header Data -----------------------';
