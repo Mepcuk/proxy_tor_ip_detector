@@ -13,7 +13,8 @@
     "private": true,
     "scripts": {
         "dev-server": "encore dev-server",
-        "dev": "export NODE_OPTIONS=--openssl-legacy-provider; gatsby build; encore dev",
+        "dev": "encore dev",
+        "test-node-v17": "export NODE_OPTIONS=--openssl-legacy-provider; gatsby build; encore dev",
         "watch": "encore dev --watch",
         "build": "encore production --progress"
     },
