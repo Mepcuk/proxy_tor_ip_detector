@@ -98,16 +98,16 @@ class ProxyCheckController extends AbstractController
 
         if ( $proxyHeaders && key_exists('HTTP_X_FORWARDED_FOR', $dataIp) ) {
 
-            $proxyIp    = $dataIp['REMOTE_ADDR'] . ' - ' . $dataIp['HTTP_VIA'];
-            if ( key_exists('HTTP_VIA', $dataIp) ) {
-                $proxyIp    .=  ' - ' . $dataIp['HTTP_VIA'];
+            $proxyIp    = $_SERVER['REMOTE_ADDR'] . ' - ' . $_SERVER['HTTP_VIA'];
+            if ( key_exists('HTTP_VIA', $_SERVER) ) {
+                $proxyIp    .=  ' - ' . $_SERVER['HTTP_VIA'];
             }
-            $clientIp       = $dataIp['HTTP_X_FORWARDED_FOR'];
+            $clientIp       = $_SERVER['HTTP_X_FORWARDED_FOR'];
             $proxyHeaders   = true;
 
         } else {
 
-            $clientIp       = $dataIp['REMOTE_ADDR'] . ' - ' . $dataIp['REMOTE_PORT'];
+            $clientIp       = $_SERVER['REMOTE_ADDR'] . ' - ' . $_SERVER['REMOTE_PORT'];
             $proxyHeaders   = false;
             $proxyIp        = null;
 
@@ -119,13 +119,16 @@ class ProxyCheckController extends AbstractController
 
         if ( !$proxyHeaders ) {
 
-            $openedProxyPort = [];
+            $openedProxyPorts = [];
 
             foreach ( $proxyPorts as $proxyPort ) {
                 if ( @fsockopen($_SERVER['REMOTE_ADDR'], $proxyPort, $errorCode, $errorDescription, 5)) {
-                    $openedProxyPort[]  = $proxyPort;
-                    $proxyIp            .=  ' opened port detected :' . $proxyPort;
+                    $openedProxyPorts[] = $proxyPort;
                 }
+            }
+
+            if ( $openedProxyPorts ) {
+                $proxyIp .=  ' opened port detected :' . implode(', ', $openedProxyPorts);
             }
         }
 
