@@ -32,12 +32,40 @@ class ProxyCheckController extends AbstractController
 
     public function index(Request $request): Response
     {
-        $torNetwork     = false;
-        $twigParameters = [
-            'HTTP_ACCEPT_LANGUAGE', 'HTTP_USER_AGENT'
+        $torNetwork         = false;
+        $twigParameters     = [
+            'HTTP_ACCEPT_LANGUAGE',
+            'HTTP_USER_AGENT'
         ];
-        $ipParameters   = [
-            'REMOTE_ADDR', 'REMOTE_PORT', 'HTTP_X_FORWARDED_FOR', 'HTTP_VIA'
+        $ipParameters       = [
+            'REMOTE_ADDR',
+            'REMOTE_PORT',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_VIA'
+        ];
+        $proxyParameters    = [
+            'HTTP_VIA',
+            'VIA',
+            'Proxy-Connection',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_FORWARDED_FOR',
+            'HTTP_X_FORWARDED',
+            'HTTP_FORWARDED',
+            'HTTP_CLIENT_IP',
+            'HTTP_FORWARDED_FOR_IP',
+            'X-PROXY-ID',
+            'MT-PROXY-ID',
+            'X-TINYPROXY',
+            'X_FORWARDED_FOR',
+            'FORWARDED_FOR',
+            'X_FORWARDED',
+            'FORWARDED',
+            'CLIENT-IP',
+            'CLIENT_IP',
+            'PROXY-AGENT',
+            'HTTP_X_CLUSTER_CLIENT_IP',
+            'FORWARDED_FOR_IP',
+            'HTTP_PROXY_CONNECTION'
         ];
 
         $headerData[] = '----------------------- Header Data -----------------------';
@@ -62,11 +90,19 @@ class ProxyCheckController extends AbstractController
             $server[$key] = $value;
         }
 
+        /**
+         * Shown parameter in twig
+         */
+
         foreach ($twigParameters as $twigParameter) {
             if (array_key_exists($twigParameter, $server)) {
                 $dataBrowser[$twigParameter] = $server[$twigParameter];
             }
         }
+
+        /**
+         * Ip parameters
+         */
 
         foreach ($ipParameters as $ipParameter) {
             if (array_key_exists($ipParameter, $server)) {
@@ -75,7 +111,18 @@ class ProxyCheckController extends AbstractController
         }
 
         /**
-         * Proxy Checker
+         * Proxy parameters check
+         */
+
+        foreach ($proxyParameters as $proxyParameter) {
+            if (array_key_exists($proxyParameter, $server)) {
+                $dataProxy[$proxyParameter] = $server[$proxyParameter];
+            }
+        }
+
+
+        /**
+         * Proxy Checker and IP finder - looks only to 1 parameter
          */
         if ( key_exists('HTTP_X_FORWARDED_FOR', $dataIp) ) {
             $proxyIp    = $dataIp['REMOTE_ADDR'] . ' - ' . $dataIp['HTTP_VIA'];
