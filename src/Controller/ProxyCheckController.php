@@ -68,21 +68,6 @@ class ProxyCheckController extends AbstractController
             'HTTP_PROXY_CONNECTION'
         ];
 
-        $headerData[] = '----------------------- Header Data -----------------------';
-        $headers = $request->headers->all();
-
-        foreach ($headers as $key => $headersArray) {
-
-            $value = '';
-            if (is_array($headersArray)) {
-                foreach ($headersArray as $headersData) {
-                    $value .= ' ' . $headersData;
-                }
-            }
-            $headerData[] = $key . ' - ' . $value;
-        }
-
-
         $dataBrowser = [];
         $dataIp = [];
 
