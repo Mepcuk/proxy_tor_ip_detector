@@ -117,20 +117,20 @@ class ProxyCheckController extends AbstractController
          * Proxy validation for most used open ports
          */
 
-        if ( !$proxyHeaders ) {
-
-            $openedProxyPorts = [];
-
-            foreach ( $proxyPorts as $proxyPort ) {
-                if ( @fsockopen($_SERVER['REMOTE_ADDR'], $proxyPort, $errorCode, $errorDescription, 5)) {
-                    $openedProxyPorts[] = $proxyPort;
-                }
-            }
-
-            if ( $openedProxyPorts ) {
-                $proxyIp .=  ' opened port detected :' . implode(', ', $openedProxyPorts);
-            }
-        }
+//        if ( !$proxyHeaders ) {
+//
+//            $openedProxyPorts = [];
+//
+//            foreach ( $proxyPorts as $proxyPort ) {
+//                if ( @fsockopen($_SERVER['REMOTE_ADDR'], $proxyPort, $errorCode, $errorDescription, 5)) {
+//                    $openedProxyPorts[] = $proxyPort;
+//                }
+//            }
+//
+//            if ( $openedProxyPorts ) {
+//                $proxyIp .=  ' opened port detected :' . implode(', ', $openedProxyPorts);
+//            }
+//        }
 
         /**
          * Tor check
