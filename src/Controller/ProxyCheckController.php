@@ -135,8 +135,8 @@ class ProxyCheckController extends AbstractController
         /**
          * Tor check
          */
-        if ( key_exists('REMOTE_ADDR', $dataIp) ) {
-            $torNetwork = $this->checkIpTorNetwork($dataIp['REMOTE_ADDR']);
+        if ( key_exists('REMOTE_ADDR', $_SERVER) ) {
+            $torNetwork = $this->checkIpTorNetwork($_SERVER['REMOTE_ADDR']);
         }
 
         return $this->render('proxy.html.twig', [
