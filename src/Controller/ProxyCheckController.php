@@ -85,40 +85,24 @@ class ProxyCheckController extends AbstractController
 
         $dataBrowser = [];
         $dataIp = [];
-        $server = [];
-        foreach ($_SERVER as $key => $value) {
-            $server[$key] = $value;
-        }
 
         /**
          * Save parameters shown in twig (UX for user)
          */
 
-        foreach ($twigParameters as $twigParameter) {
-            if (array_key_exists($twigParameter, $server)) {
-                $dataBrowser[$twigParameter] = $server[$twigParameter];
-            }
-        }
+        $twigHeaders = $this->requestHeaderValidation($twigParameters, $_SERVER);
 
         /**
          * Ip parameters
          */
 
-        foreach ($ipParameters as $ipParameter) {
-            if (array_key_exists($ipParameter, $server)) {
-                $dataIp[$ipParameter] = $server[$ipParameter];
-            }
-        }
+        $ipHeaders = $this->requestHeaderValidation($ipParameters, $_SERVER);
 
         /**
          * Detect Proxy header parameters
          */
 
-        foreach ($proxyParameters as $proxyParameter) {
-            if (array_key_exists($proxyParameter, $server)) {
-                $dataProxyHeaders[$proxyParameter] = $server[$proxyParameter];
-            }
-        }
+        $proxyHeaders = $this->requestHeaderValidation($proxyParameters, $_SERVER);
 
         /**
          * Proxy Checker and IP finder - looks only to 1 parameter
