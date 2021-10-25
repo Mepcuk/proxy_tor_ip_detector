@@ -67,6 +67,9 @@ class ProxyCheckController extends AbstractController
             'FORWARDED_FOR_IP',
             'HTTP_PROXY_CONNECTION'
         ];
+        $proxyPorts         = [
+            80, 81, 443, 1080, 3128, 6588, 8080, 8090
+        ];
 
         $dataBrowser = [];
         $dataIp = [];
@@ -93,18 +96,37 @@ class ProxyCheckController extends AbstractController
          * Proxy Checker and IP finder - looks only to 1 parameter
          */
 
-        if ( key_exists('HTTP_X_FORWARDED_FOR', $dataIp) ) {
+        if ( $proxyHeaders && key_exists('HTTP_X_FORWARDED_FOR', $dataIp) ) {
+
             $proxyIp    = $dataIp['REMOTE_ADDR'] . ' - ' . $dataIp['HTTP_VIA'];
             if ( key_exists('HTTP_VIA', $dataIp) ) {
                 $proxyIp    .=  ' - ' . $dataIp['HTTP_VIA'];
             }
-            $clientIp   = $dataIp['HTTP_X_FORWARDED_FOR'];
-            $proxyExist = true;
-//            $proxyExist = $this->checkProxyAlive($dataIp['REMOTE_ADDR'], $dataIp['REMOTE_PORT']);
+            $clientIp       = $dataIp['HTTP_X_FORWARDED_FOR'];
+            $proxyHeaders   = true;
+
         } else {
-            $clientIp   = $dataIp['REMOTE_ADDR'] . ' - ' . $dataIp['REMOTE_PORT'];
-            $proxyExist = false;
-            $proxyIp    = null;
+
+            $clientIp       = $dataIp['REMOTE_ADDR'] . ' - ' . $dataIp['REMOTE_PORT'];
+            $proxyHeaders   = false;
+            $proxyIp        = null;
+
+        }
+
+        /**
+         * Proxy validation for most used open ports
+         */
+
+        if ( !$proxyHeaders ) {
+
+            $openedProxyPort = [];
+
+            foreach ( $proxyPorts as $proxyPort ) {
+                if ( @fsockopen($_SERVER['REMOTE_ADDR'], $proxyPort, $errorCode, $errorDescription, 5)) {
+                    $openedProxyPort[]  = $proxyPort;
+                    $proxyIp            .=  ' opened port detected :' . $proxyPort;
+                }
+            }
         }
 
         /**
@@ -115,7 +137,7 @@ class ProxyCheckController extends AbstractController
         }
 
         return $this->render('proxy.html.twig', [
-            'data'          => $server,
+            'data'          => $_SERVER,
             'clientIp'      => $clientIp,
             'proxyIp'       => $proxyIp,
             'torNetwork'    => $torNetwork,
