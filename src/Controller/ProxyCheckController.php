@@ -91,7 +91,7 @@ class ProxyCheckController extends AbstractController
         }
 
         /**
-         * Shown parameter in twig
+         * Save parameters shown in twig (UX for user)
          */
 
         foreach ($twigParameters as $twigParameter) {
@@ -111,19 +111,19 @@ class ProxyCheckController extends AbstractController
         }
 
         /**
-         * Proxy parameters check
+         * Detect Proxy header parameters
          */
 
         foreach ($proxyParameters as $proxyParameter) {
             if (array_key_exists($proxyParameter, $server)) {
-                $dataProxy[$proxyParameter] = $server[$proxyParameter];
+                $dataProxyHeaders[$proxyParameter] = $server[$proxyParameter];
             }
         }
-
 
         /**
          * Proxy Checker and IP finder - looks only to 1 parameter
          */
+
         if ( key_exists('HTTP_X_FORWARDED_FOR', $dataIp) ) {
             $proxyIp    = $dataIp['REMOTE_ADDR'] . ' - ' . $dataIp['HTTP_VIA'];
             if ( key_exists('HTTP_VIA', $dataIp) ) {
@@ -304,6 +304,23 @@ class ProxyCheckController extends AbstractController
         ]);
 
         return (bool)$ipRecord;
+    }
+
+    /**
+     * Return array of request headers
+     */
+
+    public function requestHeaderValidation(array $headerFilters, array $serverHeaders):?array
+    {
+        $filteredParameters = [];
+
+        foreach ($headerFilters as $headerFilter) {
+            if (array_key_exists($headerFilter, $serverHeaders)) {
+                $filteredParameters[$headerFilter] = $serverHeaders[$headerFilter];
+            }
+        }
+
+        return $filteredParameters;
     }
 }
 
